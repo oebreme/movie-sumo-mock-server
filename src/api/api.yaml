@@ -1,0 +1,1216 @@
+openapi: 3.0.3
+info:
+  title: Movie Sumo API
+  description: |-
+
+  version: 3.0.7
+servers:
+  - url: 'http://localhost:8085/api/v3'
+  - url: 'https://movie-sumo-gateway.oebreme.dev/api/v3'
+
+tags:
+  - name: Movie
+  - name: Search
+  - name: User
+  - name: Lists
+  - name: Watchlist
+  - name: Favorites
+  - name: Provider
+  - name: Language
+
+paths:
+  #
+  # MOVIES
+  #
+  /movies/{externalMovieId}:
+    get:
+      tags:
+        - Movie
+      summary: get a movie by Id
+      description: returns a single Movie
+      parameters:
+        - name: externalMovieId
+          in: path
+          description: identifier of Movie to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          description: invalid Id supplied
+        '404':
+          description: Movie not found
+
+
+  /movies/{externalMovieId}/preview:
+    get:
+      tags:
+        - Movie
+      summary: get a preview of a movie
+      description: returns a smaller/reduced Movie object for preview purposes
+      parameters:
+        - name: externalMovieId
+          in: path
+          description: id of MoviePreview to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoviePreview'
+        '400':
+          description: invalid Id supplied
+        '404':
+          description: Preview not found
+
+
+  /movies/{externalMovieId}/similar:
+    get:
+      tags:
+        - Movie
+      summary: get similar movies of a movie
+      description: returns a list with similar movies, based on genre and story-summary-keywords
+      parameters:
+        - name: externalMovieId
+          in: path
+          description: id of Movie which the similar results will be based on
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MoviePreview'
+
+  /movies/trends:
+    get:
+      tags:
+        - Movie
+      summary: get a list of currently trending Movies
+      description: returns a list of currently trending Movies
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MoviePreview'
+
+
+  /movies/best:
+    get:
+      tags:
+        - Movie
+      summary: get a list of the best rated Movies
+      description: returns a list of the best rated Movies
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MoviePreview'
+
+
+  /movies/upcoming:
+    get:
+      tags:
+        - Movie
+      summary: get a list of upcoming new Movies
+      description: returns a list of unreleased and upcoming Movies
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MoviePreview'
+
+
+  #
+  # SEARCH
+  #
+  /search:
+    get:
+      tags:
+        - Search
+      summary: search for a movie by a given String and page
+      description: returns multiple Movies which match to some extend with the provided String - If no page is provided, it will default to the first page
+      parameters:
+        - name: queryTerm
+          in: query
+          description: provided String to search for
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: page number to determine which Movies to fetch - defaults to '1' if no page is supplied
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieSearchResultList'
+        '400':
+          description: invalid Id supplied
+        '404':
+          description: movie not found
+
+
+  #
+  # USERS
+  #
+  /users:
+    post:
+      tags:
+        - User
+      summary: register a user to the database
+      description: registers a new user to the database - if user is already known it returns the user by given email address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+      responses:
+        '200':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /users/{userId}:
+    get:
+      tags:
+        - User
+      summary: get information about a user
+      description: returns a user object containing information about a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+
+  #
+  # LISTS
+  #
+  /lists/{userId}:
+    get:
+      tags:
+        - Lists
+      summary: get all lists of a specified user
+      description: returns all lists of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/List'
+
+    post:
+      tags:
+        - Lists
+      summary: create a new and empty List for a specified user
+      description: returns the newly created list of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddList'
+
+
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/List'
+
+  /lists/{userId}/{listId}:
+    get:
+      tags:
+        - Lists
+      summary: get a list by its listId for a user
+      description: returns a single list of movies
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: listId
+          in: path
+          description: provided user identifier
+          example: 'f4294ba5-45b8-427b-a152-e08220f06eb2'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/List'
+
+
+    delete:
+      tags:
+        - Lists
+      summary: delete a specified list
+      description: deletes a specified list of movies entirely
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: listId
+          in: path
+          description: provided user identifier
+          example: 'f4294ba5-45b8-427b-a152-e08220f06eb2'
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: successful operation
+
+  /lists/{userId}/{listId}/add:
+    post:
+      tags:
+        - Lists
+      summary: add a movie to a list
+      description: adds a movie to a specified list of movies
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: listId
+          in: path
+          description: provided user identifier
+          example: 'f4294ba5-45b8-427b-a152-e08220f06eb2'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMovie'
+
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoviePreview'
+
+  /lists/{userId}/{listId}/remove/{movieId}:
+    delete:
+      tags:
+        - Lists
+      summary: delete a movie from a list
+      description: deletes a movie from a specified list of movies
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: listId
+          in: path
+          description: provided user identifier
+          example: 'f4294ba5-45b8-427b-a152-e08220f06eb2'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: movieId
+          in: path
+          description: provided identifier for a movie
+          required: true
+          schema:
+            type: string
+
+      responses:
+        '204':
+          description: successful operation
+
+
+  #
+  # WATCHLIST
+  #
+  /watchlist/{userId}:
+    get:
+      tags:
+        - Watchlist
+      summary: get the watchlist for a user
+      description: returns a list of 'to watch later'-movies of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Watchlist'
+
+  /watchlist/{userId}/add:
+    post:
+      tags:
+        - Watchlist
+      summary: add a movie to the watchlist of a user
+      description: add a movie to the list of 'to watch later' of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMovie'
+
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoviePreview'
+
+  /watchlist/{userId}/remove/{movieId}:
+    delete:
+      tags:
+        - Watchlist
+      summary: remove a movie from the watchlist of a user
+      description: removes a 'to watch later'-movie from watchlist of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: movieId
+          in: path
+          description: provided identifier for a movie
+          required: true
+          schema:
+            type: string
+
+      responses:
+        '204':
+          description: successful operation
+
+
+  #
+  # FAVORITES
+  #
+  /favorites/{userId}:
+    get:
+      tags:
+        - Favorites
+      summary: get the favorites for a user
+      description: returns a list of 'marked as favorite'-movies of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Favorites'
+
+  /favorites/{userId}/add:
+    post:
+      tags:
+        - Favorites
+      summary: add a movie to favorites of a user
+      description: add a movie to the list of 'marked as favorites' of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMovie'
+
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoviePreview'
+
+  /favorites/{userId}/remove/{movieId}:
+    delete:
+      tags:
+        - Favorites
+      summary: delete a movie from favorites of a user
+      description: removes a 'marked as favorite'-movie from favorites of a user
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: movieId
+          in: path
+          description: provided identifier for a movie
+          required: true
+          schema:
+            type: string
+
+      responses:
+        '204':
+          description: successful operation
+
+
+  #
+  # PROVIDERS
+  #
+  /streamproviders/supported:
+    get:
+      tags:
+        - Provider
+      summary: get all currently supported streaming providers
+      description: returns a list of StreamingProviders objects containing all streaming providers which are currently supported by the app
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedProviderList'
+
+  /streamproviders/{userId}/add:
+    post:
+      tags:
+        - Provider
+      summary: add a stream provider to a user
+      description: add a stream provider which the user has an active subscription for
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddSupportedProvider'
+
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedProvider'
+
+  /streamproviders/{userId}/remove/{providerId}:
+    delete:
+      tags:
+        - Provider
+      summary: removes a stream provider from a user
+      description: removes a stream provider by its providerId
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: providerId
+          in: path
+          description: provided identifier for a stream provider
+          required: true
+          schema:
+            type: string
+
+      responses:
+        '204':
+          description: successful operation
+
+
+  #
+  # LANGUAGES
+  #
+  /languages/supported:
+    get:
+      tags:
+        - Language
+      summary: get all currently supported languages
+      description: returns a list of Language objects containing all languages which are currently supported by the app
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedLanguageList'
+
+  /languages/{userId}/add:
+    post:
+      tags:
+        - Language
+      summary: add a spoken language to a user
+      description: add a language which the user is able to speak
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddSupportedLanguage'
+
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedLanguage'
+
+  /languages/{userId}/remove/{isoId}:
+    delete:
+      tags:
+        - Language
+      summary: remove a spoken language from a user
+      description: removes a spoken language by its ISO 639-1 string representation
+      parameters:
+        - name: userId
+          in: path
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: isoId
+          in: path
+          description: provided ISO 639-1 string representation of a language
+          required: true
+          schema:
+            type: string
+
+      responses:
+        '204':
+          description: successful operation
+
+
+components:
+  schemas:
+    AddMovie:
+      description: object intended to be used for adding movies to a list
+      type: object
+      required:
+        - externalId
+        - title
+      properties:
+        externalId:
+          type: integer
+          format: int64
+          example: 872585
+        title:
+          type: string
+
+    Movie:
+      type: object
+      required:
+        - movieId
+        - externalId
+        - title
+        - posterImageUrl
+        - genres
+        - details
+      properties:
+        movieId:
+          type: string
+          format: uuid
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+        externalId:
+          type: integer
+          format: int64
+          example: 872585
+        title:
+          type: string
+          example: 'Oppenheimer'
+        posterImageUrl:
+          type: string
+          example: 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg'
+        genres:
+          type: array
+          items:
+            type: string
+            example: "Drama"
+        details:
+          $ref: '#/components/schemas/MovieDetails'
+
+    MoviePreview:
+      type: object
+      required:
+        - externalId
+        - title
+        - posterImageUrl
+        - releaseDate
+        - genres
+      properties:
+        externalId:
+          type: integer
+          format: int64
+          example: 872585
+        title:
+          type: string
+          example: 'Oppenheimer'
+        posterImageUrl:
+          type: string
+          example: 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg'
+        releaseDate:
+          description: first release of the movie anywhere in the world
+          type: string
+          example: 2023-07-19
+        genres:
+          type: array
+          items:
+            type: string
+            example: 'Drama'
+
+    MovieDetails:
+      type: object
+      required:
+        - overview
+        - runtime
+        - releaseDate
+        - availableOn
+        - ratingAverage
+        - ratingVoteCount
+      properties:
+        overview:
+          description: brief introduction to the plot of the movie
+          type: string
+          example: "The story of J. Robert Oppenheimer’s role in the development of the atomic bomb during World War II."
+        runtime:
+          description: length of the movie in minutes
+          type: integer
+          format: int32
+          example: 181
+        releaseDate:
+          description: first release of the movie anywhere in the world
+          type: string
+          format: date
+          example: 2023-07-19
+        availableOn:
+          $ref: '#/components/schemas/MovieProviderList'
+        ratingAverage:
+          description: floating point number representing user ratings of the movie
+          type: number
+          format: float
+          example: 8.119
+        ratingVoteCount:
+          description: number of votes which are used to calculate the ratingAverage
+          type: integer
+          format: int32
+          example: 5854
+
+    MovieSearchResultList:
+      type: object
+      required:
+        - page
+        - results
+        - totalPages
+        - totalResults
+      properties:
+        page:
+          type: integer
+          format: int32
+          example: 1
+          description: 'current page of the paginated result'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MoviePreview'
+        totalPages:
+          type: integer
+          format: int32
+          example: 10
+          description: 'how many pages there are for this query'
+        totalResults:
+          type: integer
+          format: int32
+          example: 49
+
+    User:
+      type: object
+      required:
+        - userId
+        - email
+        - username
+        - profilePictureUrl
+        - settings
+      properties:
+        userId:
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          type: string
+        email:
+          description: email of the user
+          example: 'wald.guenther@provider.de'
+          type: string
+        username:
+          description: additional short name for displaying purposes - it is automatically build from the e-mail (everything pre-'@' symbol)
+          example: 'wald.guenther'
+          type: string
+        profilePictureUrl:
+          description: URI which points to the profile picture of the user
+          example: 'https://s.gravatar.com/avatar/31ab088c3283f6facde0474b9443e141?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fcl.png'
+          type: string
+        settings:
+          $ref: '#/components/schemas/UserSettings'
+
+    RegisterUser:
+      description: object to register a new or already known user
+      type: object
+      required:
+        - email
+        - userName
+        - profilePictureUrl
+      properties:
+        email:
+          type: string
+          format: email
+          example: 'herbert.schlange@mail.com'
+        userName:
+          type: string
+          example: 'herbert.schlange'
+          description: substring of the provided email which contains everything before the @-symbol
+        profilePictureUrl:
+          type: string
+          example: 'https://s.gravatar.com/avatar/31ab088c3283f6facde0474b9443e141?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fcl.png'
+          description: URI which points to the profile picture of the user
+
+    UserPreview:
+      description: 'a smaller/reduced User object for displaying purposes'
+      type: object
+      required:
+        - userId
+        - email
+        - username
+        - profilePictureUrl
+      properties:
+        userId:
+          description: provided user identifier
+          example: '9389a6da-8d43-4049-ad28-048777751f68'
+          type: string
+        email:
+          description: email of the user
+          example: 'wald.guenther@provider.de'
+          type: string
+        username:
+          description: additional short name for displaying purposes - it is automatically build from the e-mail (everything pre-'@' symbol)
+          example: 'wald.guenther'
+          type: string
+        profilePictureUrl:
+          description: URI which points to the profile picture of the user
+          example: 'https://s.gravatar.com/avatar/31ab088c3283f6facde0474b9443e141?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fcl.png'
+          type: string
+
+    UserSettings:
+      type: object
+      required:
+        - spokenLanguages
+        - subscribedStreamProviders
+      properties:
+        spokenLanguages:
+          description: a list of Languages the user is able to understand
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedLanguage'
+        subscribedStreamProviders:
+          description: a list of StreamProviders the user is currently subscribed to
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedProvider'
+
+    List:
+      type: object
+      required:
+        - title
+        - createdBy
+        - createdAt
+        - imageUrl
+        - count
+        - movieList
+      properties:
+        title:
+          type: string
+          description: user-chosen name/identifier for list
+          example: 'my list 1'
+        createdBy:
+          $ref: '#/components/schemas/UserPreview'
+        createdAt:
+          type: string
+          format: date-time
+          description: timestamp of the lists creation-time
+          example: 2024/08/24 01:52:44
+        imageUrl:
+          type: string
+          description: URI to the image of a list
+        count:
+          type: integer
+          format: int32
+          description: number of movies contained in the list
+        movieList:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+          description: list of movies a user added to this list
+
+    AddList:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: user-chosen name/identifier for list
+          example: 'my list 1'
+
+    Watchlist:
+      type: object
+      required:
+        - count
+        - watchlist
+      properties:
+        count:
+          type: integer
+          format: int32
+          description: number of movies contained in the list
+        watchlist:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+          description: list of movies the user wants to watch
+
+    Favorites:
+      type: object
+      required:
+        - count
+        - favorites
+      properties:
+        count:
+          type: integer
+          format: int32
+          description: number of movies contained in the list
+        favorites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+          description: list of favorite movies of a user
+
+    MovieProvider:
+      type: object
+      required:
+        - externalId
+        - name
+        - logoUrl
+        - displayOrder
+      properties:
+        externalId:
+          type: integer
+          format: int64
+          example: 872585
+        name:
+          type: string
+          example: 'Apple TV'
+        logoUrl:
+          type: string
+          example: 'https://image.tmdb.org/t/p/w500/peURlLlr8jggOwK53fJ5wdQl05y.jpg'
+        displayOrder:
+          type: integer
+          format: int32
+          description: order for provider relevancy - "1" being most relevant provider
+          example: 4
+
+    MovieProviderList:
+      description: information about where this movie is available for streaming, renting or buying
+      type: object
+      required:
+        - providers
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieProvider'
+
+    AddMovieProvider:
+      type: object
+      required:
+        - externalId
+        - name
+      properties:
+        externalId:
+          type: integer
+          format: int64
+          example: 872585
+        name:
+          type: string
+          example: 'Apple TV'
+
+    SupportedProvider:
+      type: object
+      required:
+        - externalId
+        - name
+        - logoUrl
+        - displayOrder
+      properties:
+        externalId:
+          type: integer
+          format: int64
+          example: 872585
+        name:
+          type: string
+          example: 'Apple TV'
+        logoUrl:
+          type: string
+          example: 'https://image.tmdb.org/t/p/w500/peURlLlr8jggOwK53fJ5wdQl05y.jpg'
+        displayOrder:
+          type: integer
+          format: int32
+          description: order for provider relevancy - "1" being most relevant provider
+          example: 4
+
+    SupportedProviderList:
+      description: general information about which providers are supported by this app
+      type: object
+      required:
+        - providers
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedProvider'
+
+    AddSupportedProvider:
+      type: object
+      required:
+        - externalId
+        - name
+      properties:
+        externalId:
+          type: integer
+          format: int64
+          example: 872585
+        name:
+          type: string
+          example: 'Apple TV'
+
+    SupportedLanguage:
+      type: object
+      required:
+        - isoId
+      properties:
+        isoId:
+          type: string
+          example: 'de'
+          description: ISO 639-1 string representation of a language
+
+    SupportedLanguageList:
+      type: object
+      required:
+        - languages
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedLanguage'
+
+    AddSupportedLanguage:
+      type: object
+      required:
+        - isoId
+      properties:
+        isoId:
+          type: string
+          example: 'de'
+          description: ISO 639-1 string representation of a language
+
+    Error:
+      type: object
+      required:
+        - timestamp
+        - message
+        - path
+        - status
+        - error
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+        path:
+          type: string
+        status:
+          type: integer
+          format: int32
+        error:
+          type: string
