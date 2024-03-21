@@ -18,7 +18,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "pregenerate:api": "node download-contract.js",
-    "generate:api": "openapi-generator-cli generate --global-property models -g typescript-nestjs -i src/api/api.yaml -o src/api"
+    "generate:api": "openapi-generator-cli generate --global-property models -g typescript-nestjs -i src/api/api.yaml -o src/api -c openapi-generator.config.yml"
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",

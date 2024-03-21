@@ -1,6 +1,7 @@
 import { Controller, Get, Param } from "@nestjs/common";
-import { Movie } from "../../api/model/movie";
-import { fakerEN as faker } from '@faker-js/faker';
+import { faker } from "@faker-js/faker";
+import { Movie } from "../../api/model/movie.model";
+import { genRandomGenres } from "../../app.generator";
 
 @Controller("/api/v3/movies")
 export class MovieController {
@@ -12,11 +13,7 @@ export class MovieController {
       externalId: faker.number.int(movieId),
       title: faker.commerce.productName(),
       posterImageUrl: faker.image.urlPicsumPhotos({width: 500}),
-      genres: [
-        faker.music.genre(),
-        faker.music.genre(),
-        faker.music.genre()
-      ],
+      genres: genRandomGenres(),
       details: {
         overview: faker.lorem.words({min: 12, max: 80}),
         runtime: faker.number.int({min: 23, max: 300}),
